@@ -1,9 +1,11 @@
-from app.utmn_parser import UtmnParser
 from csv import writer, reader
+
+from app.utmn_parser import UtmnParser
+from settings import settings as s
 
 
 def main():
-    utmn = UtmnParser()
+    utmn = UtmnParser(s.app.usernameOrEmail, s.app.password)
     # study_plan = "Математическое обеспечение и администрирование информационных систем"
     study_plan = "Информационные системы и технологии"
     all_students = utmn.get_all_students_by_study_plan(study_plan=study_plan)
