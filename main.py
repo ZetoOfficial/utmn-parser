@@ -1,4 +1,4 @@
-from utmn_parser import UtmnParser
+from app.utmn_parser import UtmnParser
 from csv import writer, reader
 
 

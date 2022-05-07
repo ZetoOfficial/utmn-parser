@@ -16,7 +16,6 @@ with open(CONFIG_FILE, "r") as f:
 
 
 class App(BaseModel):
-    token: str
     usernameOrEmail: str
     password: str
 

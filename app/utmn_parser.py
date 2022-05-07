@@ -1,3 +1,4 @@
+from json import dumps
 from requests import get as r_get
 from urllib.parse import urlencode
 from settings import settings as s
@@ -9,7 +10,29 @@ class InvalidTokenException(Exception):
 
 class UtmnParser:
     _api_url: str = "https://nova.utmn.ru/api/v1/"
-    _headers = {"Authorization": s.app.token}
+    _headers: dict = {}
+
+    def __init__(self, username: str, password: str) -> None:
+        self._headers.update({"Authorization": self.get_token(username, password)})
+
+    def get_token(self, username: str, password: str) -> str:
+        """Получение токена по username и password
+
+        Args:
+            username (str): Имя пользователя или e-mail
+            password (str): Пароль
+
+        Raises:
+            InvalidTokenException: Данные для авторизации не валидны
+
+        Returns:
+            str: Полученный токен
+        """
+        payload = dumps({"usernameOrEmail": username, "password": password})
+        resp = r_get(f"{self._api_url}/auth/signin", data=payload).json().get("response")
+        if token := resp.get("token"):
+            return token
+        raise InvalidTokenException()
 
     def get_all_students_by_study_plan(
         self,
