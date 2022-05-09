@@ -2,3 +2,4 @@ settings.yaml
 venv
 __pycache__
 utmn.log
+.vscode

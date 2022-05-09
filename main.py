@@ -1,3 +1,6 @@
+"""
+этот говнокод надо бы убрать....
+"""
 from csv import writer, reader
 
 from app.utmn_parser import UtmnParser
@@ -16,10 +19,7 @@ def main():
         main_info = student.get("response", {}).get("main", {})
         studbooks = student.get("response", {}).get("studbooks", {})
         studbooks = list(filter(lambda sb: sb["specialtyCode"] == "09.03.02", studbooks))
-        if len(studbooks):
-            studbooks = studbooks[0]
-        else:
-            studbooks = {}
+        studbooks = studbooks[0] if len(studbooks) else {}
         is_active = studbooks.get("active")
         defaultStudbook = student.get("response", {}).get("defaultStudbook", "")
         rating = student.get("response", {}).get("rating", {}).get("progress", {}).get(defaultStudbook)
@@ -53,5 +53,6 @@ def get_otchislen(studs):
 
 if __name__ == "__main__":
     # main()
+
     detail_students = get_students()
     print(get_otchislen(detail_students))

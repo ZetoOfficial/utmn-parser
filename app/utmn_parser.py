@@ -58,8 +58,7 @@ class UtmnParser:
         }
         resp = r_get(f"{self._api_url}/users?{urlencode(params)}", headers=self._headers).json()
         total = resp.get("response").get("total")
-        all_students = []
-        all_students += resp.get("response").get("users")
+        all_students = [resp.get("response").get("users")]
         params["limit"] = 20
         for offset in range(1, total + 1, 20):
             params["offset"] = offset
