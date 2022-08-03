@@ -1,7 +1,11 @@
-from json import dumps
-from requests import get as r_get
+import json
 from urllib.parse import urlencode
-from settings import settings as s
+
+import requests
+
+from settings import getLogger
+
+logger = getLogger(__name__)
 
 
 class InvalidTokenException(Exception):
@@ -9,13 +13,13 @@ class InvalidTokenException(Exception):
 
 
 class UtmnParser:
-    _api_url: str = "https://nova.utmn.ru/api/v1/"
+    _api_url: str = "https://nova.utmn.ru/api/v1"
     _headers: dict = {}
 
     def __init__(self, username: str, password: str) -> None:
-        self._headers.update({"Authorization": self.get_token(username, password)})
+        self._headers.update({"Authorization": self._get_token(username, password)})
 
-    def get_token(self, username: str, password: str) -> str:
+    def _get_token(self, username: str, password: str) -> str:
         """Получение токена по username и password
 
         Args:
@@ -28,8 +32,12 @@ class UtmnParser:
         Returns:
             str: Полученный токен
         """
-        payload = dumps({"usernameOrEmail": username, "password": password})
-        resp = r_get(f"{self._api_url}/auth/signin", data=payload).json().get("response")
+        return """eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYxMTZjZmUxYzc4ODQ2MDE2Y2VkNmI1NSIsInVzZXJuYW1lIjoic3R1ZDAwMDAyNjE0OTkiLCJwcm9maWxlSW1hZ2VVUkwiOm51bGwsInByb2ZpbGVMYXlvdXRVUkwiOm51bGwsImVtYWlsIjoic3R1ZDAwMDAyNjE0OTlAc3R1ZHkudXRtbi5ydSIsImRpc3BsYXlOYW1lIjoi0KLQuNGC0L7QsiDQn9Cw0LLQtdC7INCh0LXRgNCz0LXQtdCy0LjRhyIsImV4cGlyZXMiOiIxNS4wNy4yMDIyIDc6NTY6MTIiLCJkZXBhcnRtZW50Ijp7Im5hbWUiOiLQmNC90YHRgtC40YLRg9GCINC80LDRgtC10LzQsNGC0LjQutC4INC4INC60L7QvNC_0YzRjtGC0LXRgNC90YvRhSDQvdCw0YPQuiIsInRpdGxlIjpudWxsfSwiaWF0IjoxNjU3ODEwNTcyfQ.dyl9q-5dm1rjFu00WP_EIrhG0NVNZu7q4TL3k819vG0"""
+        # payload = json.dumps()
+        resp = requests.post(
+            f"{self._api_url}auth/signin", data={"usernameOrEmail": username, "password": password}
+        )
+        resp = resp.json().get("response")
         if token := resp.get("token"):
             return token
         raise InvalidTokenException()
@@ -56,13 +64,15 @@ class UtmnParser:
             "offset": 0,
             "qualification": "Бакалавр",
         }
-        resp = r_get(f"{self._api_url}/users?{urlencode(params)}", headers=self._headers).json()
+        resp = requests.get(f"{self._api_url}/users?{urlencode(params)}", headers=self._headers)
+        resp = resp.json()
         total = resp.get("response").get("total")
-        all_students = [resp.get("response").get("users")]
+        all_students = [*resp.get("response").get("users")]
         params["limit"] = 20
         for offset in range(1, total + 1, 20):
             params["offset"] = offset
-            resp = r_get(f"{self._api_url}/users?{urlencode(params)}", headers=self._headers).json()
+            resp = requests.get(f"{self._api_url}/users?{urlencode(params)}", headers=self._headers).json()
+            logger.debug(resp)
             all_students += resp.get("response").get("users")
         return all_students
 
@@ -75,4 +85,4 @@ class UtmnParser:
         Returns:
             dict: результат запроса
         """
-        return r_get(f"{self._api_url}/users/username/{username}", headers=self._headers).json()
+        return requests.get(f"{self._api_url}/users/username/{username}", headers=self._headers).json()
