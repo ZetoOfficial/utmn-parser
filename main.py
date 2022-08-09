@@ -32,7 +32,7 @@ def main():
         students_bar.update(1)
     students_bar.close()
 
-    for i, student in enumerate(sorted(students, key=lambda student: student.get("displayName")), start=1):
+    for student in students:
         username = student.get("username")
         fio = student.get("displayName")
         if username is None:
