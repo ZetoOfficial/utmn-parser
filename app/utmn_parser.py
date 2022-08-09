@@ -2,6 +2,7 @@ import json
 from urllib.parse import urlencode
 
 import requests
+from tqdm import tqdm
 
 from settings import getLogger
 
@@ -14,7 +15,10 @@ class InvalidTokenException(Exception):
 
 class UtmnParser:
     _api_url: str = "https://nova.utmn.ru/api/v1"
-    _headers: dict = {}
+    _headers: dict = {
+        'Content-Type': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36',
+    }
 
     def __init__(self, username: str, password: str) -> None:
         self._headers.update({"Authorization": self._get_token(username, password)})
@@ -32,11 +36,8 @@ class UtmnParser:
         Returns:
             str: Полученный токен
         """
-        return """eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYxMTZjZmUxYzc4ODQ2MDE2Y2VkNmI1NSIsInVzZXJuYW1lIjoic3R1ZDAwMDAyNjE0OTkiLCJwcm9maWxlSW1hZ2VVUkwiOm51bGwsInByb2ZpbGVMYXlvdXRVUkwiOm51bGwsImVtYWlsIjoic3R1ZDAwMDAyNjE0OTlAc3R1ZHkudXRtbi5ydSIsImRpc3BsYXlOYW1lIjoi0KLQuNGC0L7QsiDQn9Cw0LLQtdC7INCh0LXRgNCz0LXQtdCy0LjRhyIsImV4cGlyZXMiOiIxNS4wNy4yMDIyIDc6NTY6MTIiLCJkZXBhcnRtZW50Ijp7Im5hbWUiOiLQmNC90YHRgtC40YLRg9GCINC80LDRgtC10LzQsNGC0LjQutC4INC4INC60L7QvNC_0YzRjtGC0LXRgNC90YvRhSDQvdCw0YPQuiIsInRpdGxlIjpudWxsfSwiaWF0IjoxNjU3ODEwNTcyfQ.dyl9q-5dm1rjFu00WP_EIrhG0NVNZu7q4TL3k819vG0"""
-        # payload = json.dumps()
-        resp = requests.post(
-            f"{self._api_url}auth/signin", data={"usernameOrEmail": username, "password": password}
-        )
+        payload = json.dumps({"usernameOrEmail": username, "password": password})
+        resp = requests.post(f"{self._api_url}/auth/signin", headers=self._headers, data=payload)
         resp = resp.json().get("response")
         if token := resp.get("token"):
             return token
@@ -67,6 +68,8 @@ class UtmnParser:
         resp = requests.get(f"{self._api_url}/users?{urlencode(params)}", headers=self._headers)
         resp = resp.json()
         total = resp.get("response").get("total")
+        students_bar = tqdm(desc="Сбор первичных данных о студентах", total=total)
+        total = resp.get("response").get("total")
         all_students = [*resp.get("response").get("users")]
         params["limit"] = 20
         for offset in range(1, total + 1, 20):
@@ -74,6 +77,8 @@ class UtmnParser:
             resp = requests.get(f"{self._api_url}/users?{urlencode(params)}", headers=self._headers).json()
             logger.debug(resp)
             all_students += resp.get("response").get("users")
+            students_bar.update(20)
+        students_bar.close()
         return all_students
 
     def get_student(self, username: str) -> dict:

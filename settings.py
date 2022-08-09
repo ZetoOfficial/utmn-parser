@@ -1,4 +1,4 @@
-from logging import DEBUG, FileHandler, StreamHandler, basicConfig, getLogger
+from logging import INFO, FileHandler, StreamHandler, basicConfig, getLogger
 from pathlib import Path
 
 from pydantic import BaseModel, BaseSettings
@@ -7,7 +7,7 @@ from yaml import SafeLoader, load
 CONFIG_FILE = str(Path(__file__).parent.absolute()) + "/settings.yaml"
 LOGFILE_FILE = str(Path(__file__).parent.absolute()) + "/utmn.log"
 basicConfig(
-    level=DEBUG,
+    level=INFO,
     format="[%(asctime)s] [%(levelname)s] [%(name)s] [%(funcName)s():%(lineno)s] %(message)s",
     handlers=[FileHandler(LOGFILE_FILE), StreamHandler()],
 )
