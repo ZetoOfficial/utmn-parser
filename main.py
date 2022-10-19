@@ -1,5 +1,6 @@
 import csv
 import json
+from datetime import date
 
 from pydantic import BaseModel
 from tqdm import tqdm
@@ -97,7 +98,7 @@ def cache_students(up: UtmnParser, students: list) -> dict:
     return cached_students
 
 
-def main(study_plan: str, qualification: str, entered: int):
+def main(study_plan: str, qualification: str, entered: int, short_name: str):
     up = UtmnParser(settings.app.usernameOrEmail, settings.app.password)
 
     students = up.get_all_students_by_study_plan(
@@ -119,7 +120,7 @@ def main(study_plan: str, qualification: str, entered: int):
         reverse=True,
     )
     fieldnames = list(Student.__fields__.keys())
-    with open('students.csv', 'w') as f:
+    with open(f'students_{short_name}_{entered}_{date.today()}.csv', 'w') as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         for student in students:
@@ -128,6 +129,9 @@ def main(study_plan: str, qualification: str, entered: int):
 
 if __name__ == '__main__':
     study_plan = 'Математическое обеспечение и администрирование информационных систем'
+    # study_plan = 'Прикладная информатика: разработка информационных систем бизнеса'
+    # study_plan = 'Информационные системы и технологии: интернет-технологии и разработка web-приложений'
+    short_name = 'моаис'  # тут чисто для сохранения в файл
     qualification = 'Бакалавр'
-    entered = 2021
-    main(study_plan, qualification, entered)
+    entered = 2024  # тут менять год
+    main(study_plan, qualification, entered, short_name)
