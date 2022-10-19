@@ -14,80 +14,92 @@ class InvalidTokenException(Exception):
 
 
 class UtmnParser:
-    _api_url: str = "https://nova.utmn.ru/api/v1"
+    _api_url: str = 'https://nova.utmn.ru/api/v1'
     _headers: dict = {
         'Content-Type': 'application/json',
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36',
     }
 
     def __init__(self, username: str, password: str) -> None:
-        self._headers.update({"Authorization": self._get_token(username, password)})
+        self._headers.update({'Authorization': self._get_token(username, password)})
 
     def _get_token(self, username: str, password: str) -> str:
-        """Получение токена по username и password
+        '''Getting token by username and password
 
         Args:
-            username (str): Имя пользователя или e-mail
-            password (str): Пароль
+            username (str): Username or e-mail
+            password (str): Password
 
         Raises:
-            InvalidTokenException: Данные для авторизации не валидны
+            InvalidTokenException: Authorization data is not valid
 
         Returns:
-            str: Полученный токен
-        """
-        payload = json.dumps({"usernameOrEmail": username, "password": password})
-        resp = requests.post(f"{self._api_url}/auth/signin", headers=self._headers, data=payload)
-        resp = resp.json().get("response")
-        if token := resp.get("token"):
+            str: Received token
+        '''
+        payload = json.dumps({'usernameOrEmail': username, 'password': password})
+        resp = requests.post(
+            f'{self._api_url}/auth/signin', headers=self._headers, data=payload
+        )
+        resp = resp.json().get('response')
+        if token := resp.get('token'):
             return token
         raise InvalidTokenException()
 
     def get_all_students_by_study_plan(
         self,
         study_plan: str,
-        entered: int = 2021,
+        qualification: str,
+        entered: int,
     ) -> list:
-        """Получение всех студентов заданного направления
+        '''Getting all students of a given direction
 
         Args:
-            study_plan (str): Полное название направления
-            entered (int, optional): Год поступления. По умолчанию 2021.
+            study_plan (str): Full name of the study plan
+            qualification (str): Qualification level
+            entered (int, optional): Entered Year. The default is 2021.
 
         Returns:
-            dict: результат запроса
-        """
+            dict: query result
+        '''
         params = {
-            "limit": 1,
-            "searchRole": "student",
-            "entered": entered,
-            "studyPlan": study_plan,
-            "offset": 0,
-            "qualification": "Бакалавр",
+            'limit': 1,
+            'searchRole': 'student',
+            'entered': entered,
+            'studyPlan': study_plan,
+            'offset': 0,
+            'qualification': qualification,
         }
-        resp = requests.get(f"{self._api_url}/users?{urlencode(params)}", headers=self._headers)
-        resp = resp.json()
-        total = resp.get("response").get("total")
-        students_bar = tqdm(desc="Сбор первичных данных о студентах", total=total)
-        total = resp.get("response").get("total")
-        all_students = [*resp.get("response").get("users")]
-        params["limit"] = 20
-        for offset in range(1, total + 1, 20):
-            params["offset"] = offset
-            resp = requests.get(f"{self._api_url}/users?{urlencode(params)}", headers=self._headers).json()
+        limit = 20
+        resp = requests.get(
+            f'{self._api_url}/users?{urlencode(params)}', headers=self._headers
+        ).json()
+        total = resp.get('response').get('total')
+
+        all_students = [*resp.get('response').get('users')]
+        params['limit'] = limit
+        students_bar = tqdm(desc='Collecting primary data on students', total=total)
+
+        for offset in range(1, total + 1, limit):
+            params['offset'] = offset
+            resp = requests.get(
+                f'{self._api_url}/users?{urlencode(params)}', headers=self._headers
+            ).json()
             logger.debug(resp)
-            all_students += resp.get("response").get("users")
-            students_bar.update(20)
+            all_students += resp.get('response').get('users')
+            students_bar.update(limit)
         students_bar.close()
+
         return all_students
 
     def get_student(self, username: str) -> dict:
-        """Получение подробной информации о студенте
+        '''Getting detailed information about the student
 
         Args:
-            username (str): username студента на vmeste
+            username (str): student username on vmeste
 
         Returns:
-            dict: результат запроса
-        """
-        return requests.get(f"{self._api_url}/users/username/{username}", headers=self._headers).json()
+            dict: query result
+        '''
+        return requests.get(
+            f'{self._api_url}/users/username/{username}', headers=self._headers
+        ).json()
