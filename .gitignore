@@ -14,3 +14,5 @@ old_main.py
 
 cached_preview_students.json
 cached_students.json
+
+*.csv
